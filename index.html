@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>BCNF-js</title>
+  <script src="bcnf.js"></script>
+  <script src="jquery-1.12.4.min.js"></script>
+  <link rel="stylesheet" href="jquery-ui-1.11.4.custom/jquery-ui.min.css">
+  <script src="jquery-ui-1.11.4.custom/external/jquery/jquery.js"></script>
+  <script src="jquery-ui-1.11.4.custom/jquery-ui.min.js"></script>
+  <script type="text/javascript">
+    $(function () {
+      $("input:text").addClass("ui-corner-all");
+      $('#calculate').button();
+      $('#inputform').click( submitBCNF);
+      $('#warning').addClass('ui-state-error');
+      $('#warning').hide();
+    });
+  </script>
+</head>
+<body>
+  <div id="warning"></div>
+  <form id = "inputform">
+    <p>
+      <label for="relation">
+      <span>Relation:</span>
+      <input type="text" name="relation" id="relation" />
+      </label>
+    </p>
+    <p>
+      <label for="dependencies">
+      <span>Dependencies:</span>
+      <input type="text" name="dependencies" id="dependencies">
+      </label>
+    </p>
+    <p>
+      <input type="button" name="calculate" id="calculate" value="Calculate" />
+    </p>
+  </form>
+
+  <form id="form1" runat="server">
+    <div id="dialogMsg" title="First JqueryUI Example">
+    Hello this is my first JqueryUI example.
+    </div>
+  </form>
+</body>
+</html>
