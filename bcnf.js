@@ -12,30 +12,27 @@ function showError( error) {
 };
 
 function printDeps( deps) {
-	for (var a in deps){
-		if (deps.hasOwnProperty( a)){
-			console.log("  "+a+"->"+deps[a]);
-		}
+	for (var i = 0; i < deps.length; i++){
+        console.log("  "+deps[i].left+"->"+deps[i].right);
 	}
 }
 
 function arraySubtract(a, b){
-	//console.log("diff "+a+" ; "+b);
 	//subtracts b from a ....aka a - b
-	var index;
-	for (var i = 0; i < b.length; i++){
-		index = a.indexOf(b[i]);
-		if (index != -1)
-			a.splice(index, 1);
+    var result = [];
+    // Actually selects those elements form a that are not in b
+	for (var i = 0; i < a.length; i++){
+		if (b.indexOf(a[i]) == -1)
+            result.push( a[i]);
 	}
-	//return a;
+	return result;
 }
 function arrayIn( a, b) {
 	// b's elements are in a
-	b.forEach( function(v) {
-		if (a.indexOf(v) == -1)
-			return false;
-	});
+    for (var i = 0; i < b.length; i++) {
+        if (a.indexOf(b[i]) == -1)
+            return false;
+    }
 	return true;
 }
 function arraysEqual(a, b) {
@@ -52,14 +49,23 @@ function arraysEqual(a, b) {
   return true;
 }
 
+function arrayIntersect(a, b) {
+    var result = [];
+    for (var i = 0; i < a.length; ++i) {
+        if (b.indexOf(a[i]) != -1)
+            result.push( a[i]);
+    }
+    return result;
+}
+
 function submitBCNF( e) {
   e.preventDefault();
   var data = $('#inputform :input').serializeArray();
   console.log(data);
   if (data[0].value != "" && data[1].value != "") {
     try {
-      relation = parseRelation( data[0].value);
-      dependencies = parseDependencies( data[1].value);
+      var relation = parseRelation( data[0].value);
+      var dependencies = parseDependencies( data[1].value);
 	  solveBCNF( relation, dependencies);
     }catch( e){
       showError( e);
@@ -80,78 +86,90 @@ function trimArray( a) {
 	a.forEach( function( v){ return v.trim()});
 	return a;
 }
+
+function hash( dep) {
+    // Hashes the "multivaraible" dependency into a form that can be stored as object key
+    // eg A,B - > C left side "A,B" is hashed
+    //ARGUMENTS: dep []
+
+    // Well it's a simple hash function... :D
+    return dep.join(",");
+}
+function DepObj( a, b) {
+    this.left = a;
+    this.right = b;
+}
 function parseDependencies( d) {
-  //Input in form A->B, CD->E
-  var deps = d.split(',');
-  //deps.forEach( function( v){ return v.trim()});
-  /* add ; and multiple elements A,B->C
-  for (var i = 0; i < deps.length; i++){
-	  deps[i].split(',');
-	  trimArray(deps[i]);
-  }
-  */
-  trimArray( deps);
-  var dependencies = {};
-  deps.forEach( function( v){
-    var index = v.indexOf('->');
-    if ( index == -1){
-      throw new parseError('-> missing in "'+v+'"');
-    }else {
-      leftSide = v.substring( 0, index); 
-      rightSide = v.substring( index+2).split(','); 
-	  trimArray(rightSide);
-	  // Check for nontrivial dependencies
-	  // abc -> a always holds (right side subset of left)
-	  for (var i = 0; i < rightSide.length; i++){
-		  if ( leftSide.indexOf( rightSide[i]) == -1) {
-			  // Found something that's nontrivial
-			  // add it to dependencies
-			  dependencies[ leftSide] = rightSide;
-			  break;
-		  }
-	  }
-      //var result = {};
-	  //result[ leftSide] = rightSide;
-	  //dependencies[ leftSide] = rightSide;
-	  //dependencies.push()
-      //result[ TODO:insert result into depencencies
-      //dependencies.push( 
-	  
-    }
-  });
-  console.log(dependencies);
-  return dependencies;
-  
-  
+    //Input in form A->B, CD->E
+    var deps = d.split(';');
+    trimArray( deps);
+
+    var dependencies = [];
+    deps.forEach( function( v){
+        var index = v.indexOf('->');
+        if ( index == -1){
+            throw new parseError('-> missing in "'+v+'"');
+        }else {
+            var leftSide = v.substring( 0, index).split(',');
+            var rightSide = v.substring( index+2).split(','); 
+            trimArray( leftSide);
+            trimArray(rightSide);
+            // Check for nontrivial dependencies
+            // abc -> a always holds (right side subset of left)
+            for (var i = 0; i < rightSide.length; i++){
+                //if ( leftSide.indexOf( rightSide[i]) == -1) {
+                if (arrayIn(leftSide, rightSide[i]) == false){
+                    // Found something that's nontrivial
+                    // add it to dependencies
+                    dependencies.push(new DepObj( leftSide, rightSide));
+                    //dependencies[ leftSide] = rightSide;
+                    break;
+                }
+            }
+            //var result = {};
+            //result[ leftSide] = rightSide;
+            //dependencies[ leftSide] = rightSide;
+            //dependencies.push()
+            //result[ TODO:insert result into depencencies
+            //dependencies.push( 
+
+        }
+    });
+    printDeps( dependencies);
+    return dependencies;
 }
 
 function closure( rel, dep, origRel) {
 	// calculates closure of rel according to dep. If supplied origRel is used as attributes that closure must consist of
 	var result = [];
 	//copy rel into result
-	rel.forEach(function(v){result.push(v);});
+	rel.forEach(function(v){
+        // koska joskus rel voi olla myös monta attribuuttia ("A,B") niin split
+        result.push( v);
+        //result = result.concat(v.split(',')); //TODO more efficient
+         
+        //result.push(v);
+    });
 	//rel.forEach( function( v) {
 	var iterating = true;
 	var i = 0;
 	//console.log("before:"+rel);
 	while ( iterating){
 		iterating = false;
-		rel.forEach( function( v) {
-			if (dep[v] != undefined){
-				//peform array difference
-				dep[v].forEach( function( u) {
-				//dep[v] is array
-					if (result.indexOf( u) == -1){
-						if ( origRel == undefined || (origRel != undefined && origRel.indexOf( u) != -1)) {
-							//console.log(u+" not in "+rel);
-							result.push( u);
-							//rel.concat( dep[v])
-							iterating = true;		
-						}
-					}
-				});
-			}
-		});
+        dep.forEach( function( d){
+            if (arrayIn( result, d.left)) { //current closure content matches dependency left side
+                var add = arraySubtract(d.right, result);
+                if (add.length > 0 ){ //if there is something new to add
+                    if (origRel != undefined) { //allow only addition of elements in origRel
+                        add = arrayIntersect(add, origRel);
+                    }
+                    if (add.length > 0) {
+                        result = result.concat( add);
+                        iterating = true;		
+                    }
+                }
+            }
+        });
 		//varotoimi
 		i++;
 		if (i>50){
@@ -166,7 +184,7 @@ function closure( rel, dep, origRel) {
 }
 function project( rel, dep) {
 	//projects deps onto rel
-	var depencencies = {};
+	var dependencies = [];
 	console.log("Projecting FD's onto "+rel)
 	//create each subset of rel
 	var subsets = [], subset, mask, i, total = Math.pow(2, rel.length)-1;
@@ -180,36 +198,29 @@ function project( rel, dep) {
                 subset.push(rel[i]);
             }
         }while(i--);
-        //if( result.length >= size){
-        subsets.push(subset);
-        //}
+        subsets.push(subset.sort()); //TODO should sort?
     }
 	console.log(subsets);
 	// check subsets for possible FD's
-	subsets.forEach( function( v) {
-		console.log("evaluating fd's on basis of "+v);
-		//calculate closure
-		var c = closure( v, dep, rel);
-		arraySubtract( c, v); //c = c-v
-		//console.log("calulated dff "+c+" - "+v+" = "+diff);
-		if (c.length != 0){
-			// found plausible FD
-			// Check for nontrivialITY
-			// abc -> a always holds (right side subset of left)
-			// (not done, why?)
-			//console.log("FD "+v+"->"+c+" (triv)");
-			//all found "letters" must be in original relation
-			if (arrayIn(rel, c)){
-			  //console.log("FD "+v+"->"+c);
-				depencencies[v] = c;
+	subsets.forEach( function( sub) {
+		console.log("evaluating fd's on basis of "+sub);
+		// Calculate closure
+		var c = closure( sub, dep, rel);
+        // Is there something in the closure that's not in the subset
+		var diff = arraySubtract( c, sub);
+        console.log("  diff "+c+ " and "+sub+" = "+diff);
+		if (diff.length > 0){
+			// Found plausible FD
+			// Check for nontriviality
+            // (check is included in difference above)
+			
+            // All found attributes must be in original relation (rel)
+			if (arrayIn(rel, diff)){
+                dependencies.push(new DepObj( sub, diff));
 			}
-			
-			
 		}
-		//return v;
 	});
-	return depencencies;
-    //return results;
+	return dependencies;
 
 }
 
@@ -223,48 +234,31 @@ function solveBCNF( rel, dep) {
 		bcnf = true;
 		// Calculate closures of dependencies leftsides
 		var closures = {};
-		for (var depPart in dep){
-			if (dep.hasOwnProperty( depPart)){
-			//dep.forEach( function( v) {
-				closures[depPart] = closure( [depPart], dep, rel);
-			}
-		}
-		//check closures for candidate key / superkey
-		for (var c in closures){
-			if (closures.hasOwnProperty( c) && rel.indexOf( c) != -1){
-				if (arraysEqual( closures[c], rel)){
-					console.log(c+"->"+closures[c]+" is BCNF");
-					solvedRel.push(rel);
-				}else{
-					console.log(c+"->"+closures[c]+" not in BCNF");
-					
-					//bcnf = false;
-					// Ositus
-					var rel1 = closures[c];
-					var rel2 = [c];
-					for (var i = 0; i < rel.length; i++){
-						if (rel1.indexOf(rel[i]) == -1){
-							rel2.push(rel[i]);
-						}
-					}
-					rel2.sort();
-					console.log("new div in "+rel1+" and "+rel2);
-					// Projisoi riippuvuudet
-					//rel1
-					dep1 = project( rel1, dep);
-					dep2 = project( rel2, dep);
-					console.log("decomposing result:");
-					
-					console.log(rel1+": ");
-					printDeps(dep1);
-					console.log(rel2+":");
-					printDeps(dep2);
-					//Check for keys (recurse)...Closure of attributes in new relations
-					
-					break;
-					//rekursio
-				}
-			}
+        for (var i = 0; i < dep.length; i++){
+            var d = dep[i];
+            var c = closure( d.left, dep, rel);
+            // Check calculated closure for candidate key / superkey
+            if ( arraysEqual( c, rel)){
+                // Is superkey
+                console.log(d.left+"->"+d.right+" is BCNF");
+            }else{
+                // Is not superkey, must be decomposed
+                console.log(d.left+"->"+d.right+" is not BCNF");
+                // Decompose
+                var r1 = c; //R1 = closure
+                var r2 = arraySubtract(rel, r1).concat( d.left); // R2 = left side + rest
+                r2.sort();
+                // Project dependencies
+                var d1 = project( r1, dep);
+                var d2 = project( r2, dep);
+                console.log("Decomposed result:");
+                console.log(r1+":");
+                printDeps(d1);
+                console.log(r2+":");
+                printDeps(d2);
+                //insert recursion
+                break;
+            }
 		}
 	}
 	//return rel;
