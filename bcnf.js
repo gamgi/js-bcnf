@@ -3,6 +3,15 @@ function parseError( message) {
   this.name = "parseError";
 }
 
+function print( msg, indent, newline) {
+    if (indent == undefined)
+        indent = 0;
+    var indent = Array(indent+1).join("\t"); 
+    $('#solution').append(indent+msg);
+    if (newline == undefined)
+        $('#solution').append('<br />');
+}
+
 function showError( error) {
   //Shows error to user. TODO:queue
   $("#warning").html('<strong>'+error.name+'</strong>: '+error.message);
@@ -11,9 +20,9 @@ function showError( error) {
 
 };
 
-function printDeps( deps) {
+function printDeps( deps, indent) {
 	for (var i = 0; i < deps.length; i++){
-        console.log("  "+deps[i].left+"->"+deps[i].right);
+        print(deps[i].left+"->"+deps[i].right, indent);
 	}
 }
 function uniqueFilter( value, index, self) {
@@ -66,6 +75,7 @@ function submitBCNF( e) {
   console.log(data);
   if (data[0].value != "" && data[1].value != "") {
     try {
+      $('#solution').empty();
       var relation = parseRelation( data[0].value);
       var dependencies = parseDependencies( data[1].value);
 	  solveBCNF( relation, dependencies);
@@ -140,7 +150,7 @@ function parseDependencies( d) {
 
         }
     });
-    printDeps( dependencies);
+    //printDeps( dependencies);
     return dependencies;
 }
 
@@ -178,7 +188,7 @@ function closure( rel, dep, origRel) {
 		//varotoimi
 		i++;
 		if (i>50){
-			console.log("overlfow");
+			print("overlfow");
 			break;
 		}
 	}
@@ -187,10 +197,14 @@ function closure( rel, dep, origRel) {
 	//});
 	
 }
-function project( rel, dep) {
-	//projects deps onto rel
+function project( rel, dep, level) {
+	// Projects deps onto rel
+    // Level only affects amoutn of indentation
+    level++;
 	var dependencies = [];
-	console.log("Projecting FD's onto "+rel)
+	//console.log("Projecting FD's onto "+rel)
+	print("Projecting FD's onto "+rel, level)
+    level++;
 	//create each subset of rel
 	var subsets = [], subset, mask, i, total = Math.pow(2, rel.length)-1;
 	var size = rel.length-1;
@@ -208,7 +222,8 @@ function project( rel, dep) {
 	console.log(subsets);
 	// check subsets for possible FD's
 	subsets.forEach( function( sub) {
-		console.log("Evaluating fd's on basis of "+sub);
+		//console.log("Evaluating fd's on basis of "+sub);
+		print("Evaluating fd's on basis of "+sub, level);
 		// Calculate closure
 		var c = closure( sub, dep, rel);
         // Is there something in the closure that's not in the subset
@@ -233,7 +248,8 @@ function project( rel, dep) {
                 // All found attributes must be in original relation (rel)
                 if (arrayIn(rel, diff)){
                     dependencies.push(new DepObj( sub, diff));
-                    console.log("  "+sub+"->"+diff);
+                    //console.log("  "+sub+"->"+diff);
+                    print(sub+"->"+diff, level);
                 }
             }
 		}
@@ -246,7 +262,8 @@ function project( rel, dep) {
 function solveBCNF( rel, dep, level) {
     if (level == undefined)
         level = 0;
-	console.log("Evaluating R"+level+"("+rel+")");
+	//console.log("Evaluating R"+level+"("+rel+")");
+	print("Evaluating R("+rel+")",level);
 	var bcnf = false;
 	var solvedRel = [];
 	var solvedDep = [];
@@ -255,7 +272,7 @@ function solveBCNF( rel, dep, level) {
 		// Calculate closures of dependencies leftsides
 		var closures = {};
         if (dep.length == 0){
-            console.log("  no FD's. Relation is BCNF");
+            print("no FD's. Relation is BCNF",level+1);
             return level;
         }
         for (var i = 0; i < dep.length; i++){
@@ -264,26 +281,27 @@ function solveBCNF( rel, dep, level) {
             // Check calculated closure for candidate key / superkey
             if ( arraysEqual( c, rel)){
                 // Is superkey
-                console.log("  "+d.left+"->"+d.right+" is BCNF");
+                print("\t"+d.left+"->"+d.right+" is BCNF",level);
             }else{
                 // Is not superkey, must be decomposed
-                console.log("  "+d.left+"->"+d.right+" is not BCNF");
+                print("\t"+d.left+"->"+d.right+" is not BCNF", level);
                 // Decompose
                 var r1 = c; //R1 = closure
                 var r2 = arraySubtract(rel, r1).concat( d.left); // R2 = left side + rest
                 r2.sort();
-                console.log("Decomposing into R"+"("+r1+") and R"+"("+r2+")");
+                print("Decomposing into R"+"("+r1+") and R"+"("+r2+")", level);
                 // Project dependencies
-                var d1 = project( r1, dep);
-                var d2 = project( r2, dep);
-                console.log("Decomposed result:");
-                console.log(r1+":");
-                printDeps(d1);
-                console.log(r2+":");
-                printDeps(d2);
+                var d1 = project( r1, dep, level);
+                var d2 = project( r2, dep, level);
+                print("Decomposed result:",level);
+                print(r1+":", level);
+                printDeps(d1, level+1);
+                print(r2+":", level);
+                printDeps(d2, level+1);
+                print("-- end of iteration "+level+" --",level);
                 //insert recursion
-                level = solveBCNF( r1, d1, level+1);
-                level = solveBCNF( r2, d2, level+1);
+                level = solveBCNF( r1, d1, level);
+                level = solveBCNF( r2, d2, level);
                 break;
             }
 		}

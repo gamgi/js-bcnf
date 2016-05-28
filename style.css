@@ -1,0 +1,40 @@
+body {
+    font-family: arial, sans-serif;
+}
+.sitename {
+  text-align: center;
+}
+#warning-container {
+  height: 2em;
+  width: 70vw;
+  margin: 1em auto;
+}
+#warning {
+  padding: 0.5em;
+}
+
+#inputform {
+  padding: 1em;
+  border-radius: 1em;
+  background-color: #088FBF;
+  color: #033040;
+
+  font-weight: bold;
+  margin: 0 auto;
+  width: 70vw;
+}
+#inputform input[type="text"] {
+  width: 70%;
+}
+label {
+  display: inline-block;
+  width: 7em;
+  text-align: right;
+}
+
+
+#solution {
+  white-space: pre;
+  width: 70vw;
+  margin: 1em auto;
+}
