@@ -21,6 +21,10 @@ function showError( error) {
 };
 
 function printDeps( deps, indent) {
+    if (deps.length == 0) {
+        print("None", indent);
+        return;
+    }
 	for (var i = 0; i < deps.length; i++){
         print(deps[i].left+"->"+deps[i].right, indent);
 	}
@@ -259,11 +263,13 @@ function project( rel, dep, level) {
 }
 
 
-function solveBCNF( rel, dep, level) {
-    if (level == undefined)
-        level = 0;
-	//console.log("Evaluating R"+level+"("+rel+")");
-	print("Evaluating R("+rel+")",level);
+function solveBCNF( rel, dep, indent, count) {
+    if (indent == undefined || count == undefined){
+        indent = 0;
+        count = 0;
+    }
+	print("Evaluating R("+rel+")",indent);
+    count++;
 	var bcnf = false;
 	var solvedRel = [];
 	var solvedDep = [];
@@ -272,8 +278,8 @@ function solveBCNF( rel, dep, level) {
 		// Calculate closures of dependencies leftsides
 		var closures = {};
         if (dep.length == 0){
-            print("no FD's. Relation is BCNF",level+1);
-            return level;
+            print("no FD's. Relation is BCNF",indent+1);
+            return count;
         }
         for (var i = 0; i < dep.length; i++){
             var d = dep[i];
@@ -281,31 +287,31 @@ function solveBCNF( rel, dep, level) {
             // Check calculated closure for candidate key / superkey
             if ( arraysEqual( c, rel)){
                 // Is superkey
-                print("\t"+d.left+"->"+d.right+" is BCNF",level);
+                print("\t"+d.left+"->"+d.right+" is BCNF",indent);
             }else{
                 // Is not superkey, must be decomposed
-                print("\t"+d.left+"->"+d.right+" is not BCNF", level);
+                print("\t"+d.left+"->"+d.right+" is not BCNF", indent);
                 // Decompose
                 var r1 = c; //R1 = closure
                 var r2 = arraySubtract(rel, r1).concat( d.left); // R2 = left side + rest
                 r2.sort();
-                print("Decomposing into R"+"("+r1+") and R"+"("+r2+")", level);
+                print("Decomposing into R"+(count)+"("+r1+") and R"+(count+1)+"("+r2+")", indent);
                 // Project dependencies
-                var d1 = project( r1, dep, level);
-                var d2 = project( r2, dep, level);
-                print("Decomposed result:",level);
-                print(r1+":", level);
-                printDeps(d1, level+1);
-                print(r2+":", level);
-                printDeps(d2, level+1);
-                print("-- end of iteration "+level+" --",level);
+                var d1 = project( r1, dep, indent);
+                var d2 = project( r2, dep, indent);
+                print("Decomposed result:",indent);
+                print("R"+count+"("+r1+"):", indent);
+                printDeps(d1, indent+1);
+                print("R"+(count+1)+"("+r2+"):", indent);
+                printDeps(d2, indent+1);
+                print("-- end of iteration "+count+" --",indent);
                 //insert recursion
-                level = solveBCNF( r1, d1, level);
-                level = solveBCNF( r2, d2, level);
+                count = solveBCNF( r1, d1, indent, count+1);
+                count = solveBCNF( r2, d2, indent, count);
                 break;
             }
 		}
-        return level;
+        return count;
 	}
 	//return rel;
 
