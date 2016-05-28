@@ -3,13 +3,17 @@ function parseError( message) {
   this.name = "parseError";
 }
 
-function print( msg, indent, newline) {
-    if (indent == undefined)
-        indent = 0;
-    var indent = Array(indent+1).join("\t"); 
-    $('#solution').append(indent+msg);
-    if (newline == undefined)
+function print( msg, indent, toSolution) {
+    if (toSolution === true) {
+        $('#solution').append(msg);
         $('#solution').append('<br />');
+    }else{
+        if (indent == undefined)
+            indent = 0;
+        var indent = Array(indent+1).join("\t"); 
+        $('#calculation').append(indent+msg);
+        $('#calculation').append('<br />');
+    }
 }
 
 function showError( error) {
@@ -55,9 +59,6 @@ function arraysEqual(a, b) {
   if (a == null || b == null) return false;
   if (a.length != b.length) return false;
 
-  // If you don't care about the order of the elements inside
-  // the array, you should sort both arrays here.
-
   for (var i = 0; i < a.length; ++i) {
     if (a[i] !== b[i]) return false;
   }
@@ -77,14 +78,25 @@ function submitBCNF( e) {
   e.preventDefault();
   var data = $('#inputform :input').serializeArray();
   console.log(data);
-  if (data[0].value != "" && data[1].value != "") {
-    try {
+  if (data[0].value == "") {
+      showError( new Error("No relation provided"));
+  }else if (data[1].value == "") {
+      $('#calculation').empty();
       $('#solution').empty();
+      print( " No functional dependencies, relation is in BCNF");
+      $('#solution').hide();
+  } else if (data[0].value != "" && data[1].value != "") {
+    try {
+      $("#solution").fadeIn();
+      $('#solution').empty().append("<b>Solution:</b><br />");
+      $('#solution').empty().append("<b>Solution:</b><br />");
+      $('#calculation').empty();
       var relation = parseRelation( data[0].value);
       var dependencies = parseDependencies( data[1].value);
 	  solveBCNF( relation, dependencies);
     }catch( e){
       showError( e);
+      $('#solution').hide();
     }
   }
 }
@@ -95,10 +107,7 @@ function parseRelation( r) {
   relations.forEach( function( v){ return v.trim()});
 
   // Remove duplicates
-
-  
   return relations.sort().filter( uniqueFilter);
-  //String.prototype.trim.apply(null, relations);
 }
 
 function trimArray( a) {
@@ -106,15 +115,8 @@ function trimArray( a) {
 	return a;
 }
 
-function hash( dep) {
-    // Hashes the "multivaraible" dependency into a form that can be stored as object key
-    // eg A,B - > C left side "A,B" is hashed
-    //ARGUMENTS: dep []
-
-    // Well it's a simple hash function... :D
-    return dep.join(",");
-}
 function DepObj( a, b) {
+    // Dependency object. Describes a dependency between two relations [] -> []
     this.left = a;
     this.right = b;
 }
@@ -145,16 +147,8 @@ function parseDependencies( d) {
                     break;
                 }
             }
-            //var result = {};
-            //result[ leftSide] = rightSide;
-            //dependencies[ leftSide] = rightSide;
-            //dependencies.push()
-            //result[ TODO:insert result into depencencies
-            //dependencies.push( 
-
         }
     });
-    //printDeps( dependencies);
     return dependencies;
 }
 
@@ -270,17 +264,14 @@ function solveBCNF( rel, dep, indent, count) {
     }
 	print("Evaluating R("+rel+")",indent);
     count++;
-	var bcnf = false;
+	var bcnf = true;
 	var solvedRel = [];
 	var solvedDep = [];
-	while (bcnf == false){
-		bcnf = true;
-		// Calculate closures of dependencies leftsides
-		var closures = {};
-        if (dep.length == 0){
-            print("no FD's. Relation is BCNF",indent+1);
-            return count;
-        }
+    // Calculate closures of dependencies leftsides
+    var closures = {};
+    if (dep.length == 0){
+        print("no FD's. Relation is BCNF",indent+1);
+    }else{
         for (var i = 0; i < dep.length; i++){
             var d = dep[i];
             var c = closure( d.left, dep, rel);
@@ -291,6 +282,7 @@ function solveBCNF( rel, dep, indent, count) {
             }else{
                 // Is not superkey, must be decomposed
                 print("\t"+d.left+"->"+d.right+" is not BCNF", indent);
+                bcnf = false;
                 // Decompose
                 var r1 = c; //R1 = closure
                 var r2 = arraySubtract(rel, r1).concat( d.left); // R2 = left side + rest
@@ -299,20 +291,22 @@ function solveBCNF( rel, dep, indent, count) {
                 // Project dependencies
                 var d1 = project( r1, dep, indent);
                 var d2 = project( r2, dep, indent);
+                // Print results
                 print("Decomposed result:",indent);
                 print("R"+count+"("+r1+"):", indent);
                 printDeps(d1, indent+1);
                 print("R"+(count+1)+"("+r2+"):", indent);
                 printDeps(d2, indent+1);
-                print("-- end of iteration "+count+" --",indent);
+                print("-- end of iteration  --",indent);
                 //insert recursion
                 count = solveBCNF( r1, d1, indent, count+1);
                 count = solveBCNF( r2, d2, indent, count);
                 break;
             }
-		}
-        return count;
-	}
-	//return rel;
-
+        }
+    }
+    if (bcnf == true) {
+        print("R("+rel+")", 0, true);
+    }
+	return count;
 }

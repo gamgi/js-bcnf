@@ -16,6 +16,7 @@
       $('#calculate').click( submitBCNF);
       $('#warning').addClass('ui-state-error');
       $('#warning').hide();
+      $('#solution').hide();
     });
   </script>
 </head>
@@ -26,20 +27,20 @@
   <form id = "inputform" runat="server">
     <p><h1 class="sitename">Boyce-Codd relation solver</h1></p>
     <p>
-      <label for="relation">Relation:</label>
-      <input type="text" name="relation" id="relation" />
+      <label for="relation">Relation</label>
+      <input type="text" name="relation" id="relation" value="A,B,C,D" />
       <div class="hint">Use "," as separator</div>
     </p>
     <p>
-      <label for="dependencies">Dependencies:</label>
-      <input type="text" name="dependencies" id="dependencies">
+      <label for="dependencies">Dependencies</label>
+      <input type="text" name="dependencies" id="dependencies" value="A->B;B->D;C,D->A" />
       <div class="hint">Use ";" as separator, "->" marks dependency</div>
     </p>
     <p>
       <input type="button" name="calculate" id="calculate" value="Calculate" />
     </p>
   </form>
-  <div id="solution">
-  </div>
+  <div id="solution"></div>
+  <div id="calculation"></div>
 </body>
 </html>

@@ -34,8 +34,16 @@ label {
   
 }
 
-
 #solution {
+  padding: 1em;
+  border-radius: 1em;
+  background-color: #6ABFE5;
+  color: #033040;
+
+  margin: 0 auto;
+  width: 70vw;
+}
+#calculation {
   white-space: pre;
   width: 70vw;
   margin: 1em auto;
