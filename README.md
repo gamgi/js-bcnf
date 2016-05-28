@@ -5,4 +5,4 @@ During a school project I needed a solver. This one does not support multivalued
 
 ## Dependencies
 jQuery 1.12  
-jQueryUI 1.15
+jQueryUI 1.11
