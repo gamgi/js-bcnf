@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>BCNF-js | Boyce-Codd relation solver</title>
+  <script src="bcnf.js"></script>
+  <script src="jquery-1.12.4.min.js"></script>
+  <link rel="stylesheet" href="jquery-ui-1.11.4.custom/jquery-ui.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="jquery-ui-1.11.4.custom/external/jquery/jquery.js"></script>
+  <script src="jquery-ui-1.11.4.custom/jquery-ui.min.js"></script>
+  <script type="text/javascript">
+    $(function () {
+      $("input:text").addClass("ui-corner-all");
+      $('#calculate').button();
+      $('#calculate').click( submitBCNF);
+      $('#warning').addClass('ui-state-error');
+      $('#warning').hide();
+      $('#solution').hide();
+    });
+  </script>
+</head>
+<body>
+  <div id="warning-container">
+      <div id="warning"></div>
+  </div>
+  <form id = "inputform" runat="server">
+    <p><h1 class="sitename">Boyce-Codd relation solver</h1></p>
+    <p>
+      <label for="relation">Relation</label>
+      <input type="text" name="relation" id="relation" value="A,B,C,D" />
+      <div class="hint">Use "," as separator</div>
+    </p>
+    <p>
+      <label for="dependencies">Dependencies</label>
+      <input type="text" name="dependencies" id="dependencies" value="A->B;B->D;C,D->A" />
+      <div class="hint">Use ";" as separator, "->" marks dependency</div>
+    </p>
+    <p>
+      <input type="button" name="calculate" id="calculate" value="Calculate" />
+    </p>
+  </form>
+  <div id="solution"></div>
+  <div id="calculation"></div>
+</body>
+</html>
